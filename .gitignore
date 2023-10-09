@@ -1,1 +1,3 @@
 static
+.gitignore
+__pycache__
