@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doc-SAU</title>
+</head>
+<body>
+
+<style>
+body {
+    background: #293d5d;
+}
+.rota {
+    background: #eee;
+    margin: 30px;
+    font-family: sans-serif;
+    font-size: 19px;
+    padding:10px;
+
+.link {
+    background: #000;
+    color: #fff;
+    padding: 10px;
+}
+}
+
+</style>
+
+{%
+    set link = {
+        '/files':{'input':"GET > {'file': str }", 'output':"json {'response': bool , 'files': list }"},
+
+        '/login/login':{'input':"POST > {'user': str , 'pwd':str}" , 'output':"json {'response': bool ,  'mensg': str , 'files': list , 'filhos': list , 'token': str}"},
+
+        '/$user/new_path':{'input':"POST > {'nome': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+
+        '/$user/del_path':{'input':"POST > {'nome': str , *'confirm':true}" , 'output':"json {'response': bool , 'mensg': str }"},
+
+        '/$user/new_file':{'input':"POST > {'file': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+
+        '/$user/del_file':{'input':"POST > {'file': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+
+        '/$user/upload':{'input':"POST > {'file': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+    }
+        
+        
+        
+%}
+
+{%for i in link%}
+<div class="rota">
+    <div class="link">
+        $host {{i}} <br>
+    </div>
+    input : {{link[i].input}} <br>
+    output : {{link[i].output}} <br>
+</div>
+{%endfor%}
+
+<form action="./sergio.sousa/upload?path=./sti/subSTI" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" id="">
+    <button type="submit">enviar</button>
+
+</form>
+    
+</body>
+</html>
