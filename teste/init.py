@@ -29,11 +29,12 @@ def local(megs,metod,rota, arg, head=''):
 
 local('files','get','/files','file=/')
 
-
-data={'json':{'user':'sergio.sousa','pwd':'@Aa1020'}}
+user=    #adicioanr um usuario
+pwd=     # adicionar a senha do usuario
+data={'json':{'user':user,'pwd':pwd }}  #  << erro se n tiver usuario vinculado ao LDAP e senha 
 local('login','post','/login/login', data)
 
-token='e7d68b0eb90b9a8e46a92ce95431dab10033c90cc0ec3f3b673609107b6d038b'
+token=   # adicionar um token Bearer
 head={'Authorization':f'Bearer {token}'}
 data={'json':{'nome':'pasta_teste'}}
 local('criar pasta','post','/sergio.sousa/new_path?path=/', data, head=head)
