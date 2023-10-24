@@ -1,10 +1,11 @@
 from flask import Flask , request, send_file , jsonify, render_template
 from flask_cors import CORS
 from user_SAU import SAU
-from config import PORT, HOST, HOST_LDAP, ipCORS
+from config import PORT, HOST, HOST_LDAP, ipCORS, DOMINIO
 from json import loads
 import os
 from jinja2 import Template
+from hashlib import sha256
 
 
 users=dict()
@@ -33,30 +34,42 @@ def creatapp():
 
     CORS(app,restore={r"/*":{"origins":f"http://{ipCORS}" , "supports_credentials":True ,  "headers": ["Authorization"]}})
 
-    @app.route('/files')
-    def index():
-        req=dict(request.args)
-        file=req.get('file')
-        if '.' in file:
-            return send_file(f'./static/{file}')
-        if not os.path.exists(f'./static/{file}'):
-            return jsonify({"response": False, "file":None})
-        conteudo=os.listdir(f'./static/{file}')
-        conteudo=list(map(tipo , conteudo))
-        return jsonify({"response": True, "file":conteudo})
     
     @app.route('/<user>/<acao>',methods=['GET','POST'])
     def main(user,acao):
         ip=request.remote_addr
+        tt=request.headers.get('Authorization')
+        ###### ---------rotas for GET
         if request.method=='GET':
-            if acao =='files':
-                return 'get in files'
+            if acao == 'files':
+                if user != "none":
+                    user=users.get(user)
+                    if user:
+                        if ip==user.ip:
+                            rota=user.acesso.replace('./static/','')
+                        else:
+                            return jsonify({"response": False, "mensg": f"erro no ip {ip}, faça login"})
+                    else:
+                        return jsonify({"response": False, "mensg":"user não logado"})
+                else:
+                    rota=''
+                req=dict(request.args)
+                file=f'./static/{rota}{req.get("file")}'
+                if os.path.isfile(file):
+                    return send_file(file)
+                if not os.path.exists(file):
+                    return jsonify({"response": False, "file":None})
+                conteudo=os.listdir(file)
+                conteudo=list(map(tipo , conteudo))
+                return jsonify({"response": True, "file":conteudo}) 
             
+
         elif request.method=='POST':
-            tt=request.headers.get('Authorization')
+            if user not in users and acao != 'login' :
+                return jsonify({"response":False, 'mensg':f'{user} não logado'})
 
             path=request.args.get('path')
-            path = path if path else '/'
+            path = path if path else './'
             tokem=dict([tt.split(' ') if tt else ['a','b']])
             bearer=tokem.get('Bearer')
             if request.data:
@@ -64,7 +77,7 @@ def creatapp():
             else:
                 data={}
 
-            ###### ---------rotas para posts    
+            ###### ---------rotas for POST
             if acao == 'login':
                 return jsonify(login(data,ip))
         
@@ -82,6 +95,7 @@ def creatapp():
             
             elif acao == 'new_user':
                 data['rota']=path
+                print(data)
                 return jsonify(users.get(user).new_user(data,bearer))
             
             elif acao == 'del_user':
@@ -104,4 +118,4 @@ def creatapp():
 
 
 app=creatapp()
-app.run(host=HOST, port=PORT,)
+app.run(host=HOST, port=PORT, debug=1)

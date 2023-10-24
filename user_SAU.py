@@ -10,10 +10,6 @@ server=Server(HOST_LDAP,get_info=ALL)
 
 def reload_users(update_file=False):
     global data_users
-    if update_file:
-        with open('./users.ini','w') as arq:
-            dump(data_users , arq)
-
     with open('./users.ini','r') as arq:
         _users=loads(arq.read())
         data_users.update(_users)
@@ -42,7 +38,7 @@ class SAU:
                 return {"response":False, 'mensg':'usuario não cadastrados',"token":None, 'filhos':None, 'acesso':None}
             self.acesso=f'./static{self.dados.get("acesso")}'
             self.token=sha256((ip+user).encode()).hexdigest()
-            return {"response":True, 'mensg':'sucess', 'token': self.token, "acesso":self.acesso, 'filhos':self.dados.get('filhos')}
+            return {"response":True, 'mensg':'sucess', 'user':self.user , 'token': self.token, "acesso":self.acesso, 'filhos':self.dados.get('filhos')}
         else: return {"response":False, 'mensg':'nome ou senha invalido',"token":None, 'filhos':None, 'acesso':None}
 
     @validar
@@ -79,13 +75,14 @@ class SAU:
 
     @validar
     def del_file(self,data):
-        nome_file=data.get('file')
-        file= self.acesso + data["rota"]+ nome_file
-        print(file)
+        file=data.get('file')
+        path=data['rota']
+        file=self.acesso+path[2:]+file
+        
         if os.path.exists(file):
             os.remove(file)
             return {"response":True, 'mensg':'sucess'}
-        else: return {"response":False, 'mensg':f'{nome_file}/ Não existe'}
+        else: return {"response":False, 'mensg':f'{file}/ Não existe'}
     
     @validar
     def new_user(self,data):
@@ -97,24 +94,32 @@ class SAU:
         data_users[new_user]={"acesso":acesso, "filhos":[]}
         self.dados['filhos'].append(new_user)
         data_users[new_user]={"acesso":acesso, "filhos":[]}
-        reload_users(update_file=True)
+        with open('./users.ini','w') as arq:
+            dump(data_users , arq)
         return {"response":True, 'mensg':'sucess'}
     
     @validar
     def del_user(self,data):
         user=data.get('user')
-        if user not in data_users:
+        dados=globals()['data_users']
+        if user not in dados:
             return {"response":False, 'mensg':'usuario não existe'}
-        data_users.pop(user)
-        self.dados['filhos'].remove(user)
-        reload_users(update_file=True)
+        else:
+            dados.pop(user)
+            if user in self.dados['filhos']:
+                self.dados['filhos'].remove(user)
+            else: 
+                return {"response":False, 'mensg':f'{user} não é filho de {self.user}'}
+        with open('./users.ini','w') as arq:
+            dump(data_users , arq)
         return {"response":True, 'mensg':'sucess'}
     
     @validar
     def upload(self, data):
         file=data.get('file')
         path=data.get('path')
-        path=self.acesso+path[1:]
+        path=self.acesso+path[2:]
+        
         if not os.path.exists(path):
             return {"response":False, 'mensg':'pasta não existe'}
         try:
