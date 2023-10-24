@@ -118,5 +118,6 @@ def creatapp():
     return app
 
 
-app=creatapp()
-app.run(host=HOST, port=PORT)
+if __name__=="__main__":
+    app=creatapp()
+    app.run(host=HOST, port=PORT)
