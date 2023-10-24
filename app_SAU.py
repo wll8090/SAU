@@ -1,4 +1,4 @@
-from flask import Flask , request, send_file , jsonify, render_template
+from flask import Flask , request, send_file , jsonify, abort
 from flask_cors import CORS
 from user_SAU import SAU
 from config import PORT, HOST, HOST_LDAP, ipCORS, DOMINIO
@@ -106,6 +106,7 @@ def creatapp():
                 file= request.files['file']
                 data={'file':file, 'path':path}
                 return jsonify(users.get(user).upload(data,bearer))
+        return abort(404)
                 
     @app.route('/doc')
     def doc():
@@ -118,4 +119,4 @@ def creatapp():
 
 
 app=creatapp()
-app.run(host=HOST, port=PORT, debug=1)
+app.run(host=HOST, port=PORT)
