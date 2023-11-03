@@ -1,11 +1,10 @@
 from flask import Flask , request, send_file , jsonify, abort
 from flask_cors import CORS
 from user_SAU import SAU
-from config import PORT, HOST, HOST_LDAP, ipCORS, DOMINIO
+from config import PORT, HOST, ipCORS
 from json import loads
 import os
 from jinja2 import Template
-from hashlib import sha256
 
 
 users=dict()
@@ -13,20 +12,49 @@ users=dict()
 
 def login(data,ip):
     global users
-    user=data.get('user')
+    user=data.get('user').lower()
     test=SAU()
     r=test.login(user,data.get('pwd'),ip)
     if r.get('response'):
         users[user]=test
     return r
 
-def tipo(i):
-    tipo=i.split('.')
-    if len(tipo)<2:
-        tipo = 'path'
+def reload_files(update_file=False):
+    global data_files
+    with open('./arquivo_online.json','r') as arq:
+        _files=loads(arq.read())
+        data_files.update(_files)
+    return data_files
+data_files={}
+reload_files()
+
+def gerador_tipo(caminho):
+    def tipo(i):
+        tipo=i.split('.')
+        if len(tipo)<2:
+            tipo = 'path'
+        else:
+            tipo=tipo[-1]
+        ii=(caminho+'/'+i).replace('//','/')
+        estado=data_files.get(ii)
+        return {'file':i, 'type':tipo, 'estado':estado }
+    return tipo
+
+
+def logout(data,ip):
+    nome_user=data.get('user')
+    user=users.get(nome_user)
+    if not user:
+        return {"response":False, "mensg":"user não encontrado"}
     else:
-        tipo=tipo[-1]
-    return {'file':i, 'type':tipo }
+        if user.ip==ip:
+            a=users.pop(nome_user)
+            return {"response":True, "mensg":"ok"}
+        else:
+            {"response":False, "mensg":"ip não valido "}
+
+
+login({'user':'sergio.ti','pwd':'@Aa1020'},'192.168.40.102')
 
 
 def creatapp():
@@ -42,26 +70,39 @@ def creatapp():
         ###### ---------rotas for GET
         if request.method=='GET':
             if acao == 'files':
-                if user != "none":
-                    user=users.get(user)
-                    if user:
-                        if ip==user.ip:
-                            rota=user.acesso.replace('./static/','')
-                        else:
-                            return jsonify({"response": False, "mensg": f"erro no ip {ip}, faça login"})
-                    else:
-                        return jsonify({"response": False, "mensg":"user não logado"})
-                else:
-                    rota=''
-                req=dict(request.args)
-                file=f'./static/{rota}{req.get("file")}'
-                if os.path.isfile(file):
+                reload_files()
+                data=dict(request.args)
+                file=('./static/'+data.get('path')).replace('/./','/')
+                blok=True
+                if user != 'none' and user in users:    # if para usuario logado
+                    if ip==users[user].ip:              #validação de ip
+                        file=(users.get(user).acesso+data.get('path')).replace('/./','/')
+                        blok=False
+                if file.endswith('/'):
+                    file=file[:-1]
+
+                if blok:    # if que bloqueia as requisições
+                    list_file=file.split('/')
+                    for i in list_file[2:]:
+                        i='/'.join(list_file)
+                        if data_files[i]  =='offline':
+                            return jsonify({"response": False, "mensg": "caminho não encontrado"})
+                        list_file.pop()
+
+                if os.path.isfile(file):   # if para ver de arquivos
                     return send_file(file)
-                if not os.path.exists(file):
-                    return jsonify({"response": False, "file":None})
-                conteudo=os.listdir(file)
-                conteudo=list(map(tipo , conteudo))
-                return jsonify({"response": True, "file":conteudo}) 
+                
+                elif os.path.isdir(file):  #  envia todos os nomes de arquivos
+                    files=os.listdir(file)
+                    tipo=gerador_tipo(file)
+                    files=list(map(tipo,files))
+                    if blok:
+                        files=[i for i in files if i['estado'] =='online']
+                    return jsonify({"response": True, "files": files})
+                else:
+                    return jsonify({"response": True, "files": 'None'})
+
+
             
 
         elif request.method=='POST':
@@ -72,45 +113,51 @@ def creatapp():
             path = path if path else './'
             tokem=dict([tt.split(' ') if tt else ['a','b']])
             bearer=tokem.get('Bearer')
+            data={}
+            data['path']=path
             if request.data:
-                data=loads(request.data)
-            else:
-                data={}
+                data.update(loads(request.data))
 
             ###### ---------rotas for POST
             if acao == 'login':
                 return jsonify(login(data,ip))
-        
-            elif acao == 'new_path':
-                data['rota']=path
-                return  jsonify(users.get(user).new_path(data,bearer))
             
-            elif acao == 'del_path':
-                data['rota']=path
-                return jsonify(users.get(user).del_path(data,bearer))
+            elif acao == 'logout':
+                return jsonify(logout(data,ip))
+            
+            elif acao == 'filhos':
+                return  jsonify(users.get(user).filhos(data,bearer))
+        
+            elif acao == 'new_pasta':
+                return  jsonify(users.get(user).new_pasta(data,bearer))
+            
+            elif acao == 'del_pasta':
+                return jsonify(users.get(user).del_pasta(data,bearer))
             
             elif acao == 'del_file':
-                data['rota']=path
                 return jsonify(users.get(user).del_file(data,bearer))
             
             elif acao == 'new_user':
-                data['rota']=path
-                print(data)
                 return jsonify(users.get(user).new_user(data,bearer))
             
             elif acao == 'del_user':
-                data['rota']=path
                 return jsonify(users.get(user).del_user(data,bearer))
             
             elif acao == 'upload':
                 file= request.files['file']
-                data={'file':file, 'path':path}
+                data['file']=file
                 return jsonify(users.get(user).upload(data,bearer))
+            
+            elif acao == 'rename':
+                return jsonify(users.get(user).rename(data,bearer))
+            
+            elif acao == 'estado':
+                return jsonify(users.get(user).estado(data,bearer))
         return abort(404)
                 
     @app.route('/doc')
     def doc():
-        with open('templates/doc.html') as arq:
+        with open('templates/doc.html',encoding='utf8') as arq:
             text=Template(arq.read()).render()
         return (text)
 

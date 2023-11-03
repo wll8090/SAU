@@ -1,8 +1,13 @@
 
-with open('./config.ini','r') as arq:
-    data=arq.read().strip()
-    data=data.replace('"','')
-    data=data.split('\n')
-    data=[i.split(':') for i in data if i and not i.startswith("#")]
-    data={a.strip():b.strip() for a,b in data}
-    globals().update(data)
+
+#  configuração para a API
+HOST = "192.168.40.102"
+PORT = 5001
+
+# ldap
+HOST_LDAP = "10.253.251.13"
+ipCORS = "192.168.43.38"
+DOMINIO = "@server.local"
+
+# sistema
+FILES_PERMITIDOS = ['pdf','doc','pptx','csv','gdoc','jpg','jpeg','xlsx','jpeg','png','docx']

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doc-SAU</title>
 </head>
@@ -9,35 +9,41 @@
 
 <style>
 body {
-    background: #293d5d;
+    background: #1d2b42;
 }
 .rota {
     background: #eee;
     margin: 30px;
     font-family: sans-serif;
     font-size: 19px;
-    padding:10px;
+    padding:10px;}
 
 .link {
-    background: #000;
+    background: #293d5d;
     color: #fff;
     padding: 10px;
 }
+.texto {
+    background: #fff;
+    margin: 29px;
+    padding: 17px;
+    font-family: sans-serif;
 }
+
 
 </style>
 
 {%
     set link = {
-        '/files':{'input':"GET > {'file': str }", 'output':"json {'response': bool , 'files': list }"},
+        '/files':{'input':"GET > {'file': str }", 'output':"json {'response': bool , 'files': json{'file': str, 'type':str, 'estado':'online'|'offline'} }"},
 
         '/login/login':{'input':"POST > {'user': str , 'pwd':str}" , 'output':"json {'response': bool ,  'mensg': str , 'files': list , 'filhos': list , 'token': str}"},
 
-        '/$user/new_path':{'input':"POST > {'nome': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+        '/$user/logout':{'input':"POST > {'user': str }" , 'output':"json {'response': bool , 'mensg': str }"},
 
-        '/$user/del_path':{'input':"POST > {'nome': str , *'confirm':true}" , 'output':"json {'response': bool , 'mensg': str }"},
+        '/$user/new_pasta':{'input':"POST > {'nome': str }" , 'output':"json {'response': bool , 'mensg': str }"},
 
-        '/$user/new_file':{'input':"POST > {'file': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+        '/$user/del_pasta':{'input':"POST > {'nome': str , *'confirm':true}" , 'output':"json {'response': bool , 'mensg': str }"},
 
         '/$user/del_file':{'input':"POST > {'file': str }" , 'output':"json {'response': bool , 'mensg': str }"},
 
@@ -46,13 +52,24 @@ body {
         '/$user/new_user':{'input':"POST > {'user': str }" , 'output':"json {'response': bool , 'mensg': str }"},
         
         '/$user/del_user':{'input':"POST > {'user': str }" , 'output':"json {'response': bool , 'mensg': str }"},
+
+        '/$user/filhos':{'input':"POST > {'user': str }" , 'output':"json {'response': bool , 'filhos': list }"},
+
+        '/$user/estado':{'input':"POST > {'file': str , 'estado': 'online'|'offline'}", 'output':"json {'response': bool , 'mensg': str }"},
+        
+        '/$user/rename':{'input':"POST > {'nome': str , 'new_nome': str }" , 'output':"json {'response': bool , 'mensg': str }"},
     }
-        
-        
-        
 %}
 
+<div class="texto">
+    <h2>SAU Docs:</h2>
+    É um sistema diponibilizador de arquivos e gerenciavel, sua funcionalidade: Dispor arquivos e pastas de forma segura e controlada. <br>
+    Conta com uma interfacie de usuario para dipor os arquivos com: Uploads, criação de usuarios gereciadores vinculados a pasta, dispor arquivos online ou offline. <br>
+    As funcionalidades da API expressas nos endpoints abaixos. <br>
+    A segurança conta com altenticação via IP e validação continua. 
+</div>
 {%for i in link%}
+
 <div class="rota">
     <div class="link">
         $host {{i}} <br>
@@ -61,12 +78,6 @@ body {
     output : {{link[i].output}} <br>
 </div>
 {%endfor%}
-
-<form action="./sergio.sousa/upload?path=./sti/subSTI" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" id="">
-    <button type="submit">enviar</button>
-
-</form>
     
 </body>
 </html>

@@ -6,6 +6,19 @@ os.system('cls')
 host='192.168.40.102'
 port=5001
 
+
+arquivos=0
+login=1
+criar_user=0
+criar_pasta=0
+fazer_upload=0
+estado=0
+filhos=0
+rename=0
+files=1
+
+
+
 def local(megs,metod,rota, arg, head=''):
     print(f'Requisição de --->  {megs}')
     url=f'http://{host}:{port}'
@@ -26,36 +39,86 @@ def local(megs,metod,rota, arg, head=''):
    
 
 
+if arquivos:
+    local('files','get','/none/files','file=/')
 
-local('files','get','/files','file=/')
-
-user= 'sergio.sousa'    #adicioanr um usuario  é o mesmo que vai para as URLs
-pwd=  '@Aa1020'   # adicionar a senha do usuario
+user= 'anna.ti'    #adicioanr um usuario  é o mesmo que vai para as URLs
+pwd=  '@Aa1020'      # adicionar a senha do usuario
 data={'json':{'user':user,'pwd':pwd }}  #  << erro se n tiver usuario vinculado ao LDAP e senha 
 local('login','post','/login/login', data)
 
-token= 'e7d68b0eb90b9a8e46a92ce95431dab10033c90cc0ec3f3b673609107b6d038b'  # adicionar um token Bearer
+token= 'aa5b5f5097b95ba6f99f0477a05e913efbb9a5c3955cb6a70c20e11198df2607'  # adicionar um token Bearer
 head={'Authorization':f'Bearer {token}'}
-data={'json':{'nome':'pasta_teste'}}
-local('criar pasta','post','/sergio.sousa/new_path?path=/', data, head=head)
 
 
-data={'json':{'user':'user.teste','path':'pasta_teste'}}
-local('criar usuario','post',f'/{user}/new_user?path=/', data, head=head)
+if files:
+    data={'json':{'user':'user.teste'}}
+    local('busca de arquivos','get',f'/{user}/files','path=./', head=head)
+
+#nova pasta
+if criar_pasta:
+    data={'json':{'nome':'pasta_teste'}}
+    local('criar pasta','post',f'/{user}/new_pasta?path=./', data, head=head)        
 
 
-data={'files':{'file':('init.py',open('./init.py','rb'))}}
-local('uploads','post',f'/{user}/upload?path=/pasta_teste/', data , head=head)
+#new user
+if criar_user:
+    data={'json':{'user':'user.teste'}}
+    local('criar usuario','post',f'/{user}/new_user?path=./sti/teste/', data, head=head)          
 
 
-data={'json':{'file':'init.py'}}
-local('uploads','post',f'/{user}/del_file?path=/pasta_teste/', data , head=head)
+#upload
+if fazer_upload:
+    data={'files':{'file':('init.py',open('./teste/init.py','rb'))}}
+    local('uploads','post',f'/{user}/upload?path=./pasta_teste/', data , head=head)     
 
 
-data={'json':{'user':'user.teste'}}
-local('deletar usuario','post',f'/{user}/del_user?path=/', data, head=head)
+#estado do arquivo
+if estado:
+    data={'json':{'file':'init.py','estado':'online'}}
+    local('deletar pasta','post',f'/{user}/estado?path=./pasta_teste/', data, head=head)
 
 
-data={'json':{'nome':'pasta_teste'}}
-local('deletar pasta','post',f'/{user}/del_path?path=/', data, head=head)
+#deletar_pastar
+if fazer_upload:
+    data={'json':{'file':'init.py'}}
+    local('deletar arquivo','post',f'/{user}/del_file?path=./pasta_teste/', data , head=head)     
 
+
+#ver filhos  ./
+if filhos:
+    data={'json':{'user':'user.teste'}}
+    local('ver filhos em ./','post',f'/{user}/filhos?path=./', data, head=head)
+
+#ver filhos  ./fisica/
+if filhos:
+    data={'json':{'user':'user.teste'}}
+    local('ver filhos em ./fisica/','post',f'/{user}/filhos?path=./fisica/', data, head=head)
+
+#ver filhos  ./quimica/
+if filhos:
+    data={'json':{'user':'user.teste'}}
+    local('ver filhos em ./quimica/','post',f'/{user}/filhos?path=./quimica/', data, head=head)   
+
+
+#deletar user
+if criar_user:
+    data={'json':{'user':'user.teste'}}
+    local('deletar usuario','post',f'/{user}/del_user?path=./', data, head=head)          
+
+
+#deletar pasta
+if criar_pasta:
+    data={'json':{'nome':'pasta_teste'}}
+    local('deletar pasta','post',f'/{user}/del_pasta?path=./', data, head=head)
+
+#renomear arquivos e pastas
+if rename:
+    data={'json':{'nome':'fisica', 'new_nome':'test_pasta'}}
+    local('deletar pasta','post',f'/{user}/rename?path=./', data, head=head)
+
+
+
+if rename:
+    data={'json':{'nome':'test_pasta', 'new_nome':'fisica'}}
+    local('deletar pasta','post',f'/{user}/rename?path=./', data, head=head)
