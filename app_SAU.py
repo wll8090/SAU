@@ -36,8 +36,11 @@ def gerador_tipo(caminho):
         else:
             tipo=tipo[-1]
         ii=(caminho+'/'+i).replace('//','/')
-        estado=data_files.get(ii)
-        return {'file':i, 'type':tipo, 'estado':estado }
+        dados=data_files.get(ii)
+        estado=dados.get('estado')
+        person=dados.get('person')
+        data=dados.get('data')
+        return {'file':i, 'type':tipo, 'estado':estado , 'person':person, 'data': data}
     return tipo
 
 
@@ -85,7 +88,7 @@ def creatapp():
                     list_file=file.split('/')
                     for i in list_file[2:]:
                         i='/'.join(list_file)
-                        if data_files[i]  =='offline':
+                        if data_files[i].get('estado')  == 'offline':
                             return jsonify({"response": False, "mensg": "caminho não encontrado"})
                         list_file.pop()
 
@@ -101,8 +104,6 @@ def creatapp():
                     return jsonify({"response": True, "files": files})
                 else:
                     return jsonify({"response": True, "files": 'None'})
-
-
             
 
         elif request.method=='POST':

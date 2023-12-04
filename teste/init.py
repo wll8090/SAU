@@ -10,9 +10,9 @@ port=5001
 arquivos=0
 login=1
 criar_user=0
-criar_pasta=0
-fazer_upload=0
-estado=0
+criar_pasta=1
+fazer_upload=1
+estado=1
 filhos=0
 rename=0
 files=1
@@ -35,15 +35,15 @@ def local(megs,metod,rota, arg, head=''):
     else:
         print('erro <<<<<<<<')
     print('\n\n\n')
-    sleep(1)
+    sleep(2)
    
 
 
 if arquivos:
     local('files','get','/none/files','file=/')
 
-user= 'anna.ti'    #adicioanr um usuario  é o mesmo que vai para as URLs
-pwd=  '@Aa1020'      # adicionar a senha do usuario
+user= 'sergio.ti'          # adicioanr um usuario  é o mesmo que vai para as URLs
+pwd=  '@Aa1020'         # adicionar a senha do usuario
 data={'json':{'user':user,'pwd':pwd }}  #  << erro se n tiver usuario vinculado ao LDAP e senha 
 local('login','post','/login/login', data)
 
@@ -69,19 +69,23 @@ if criar_user:
 
 #upload
 if fazer_upload:
-    data={'files':{'file':('init.py',open('./teste/init.py','rb'))}}
+    data={'files':{'file':('dino.jpg',open('./teste/dino.jpg','rb'))}}
     local('uploads','post',f'/{user}/upload?path=./pasta_teste/', data , head=head)     
 
 
 #estado do arquivo
 if estado:
-    data={'json':{'file':'init.py','estado':'online'}}
+    data={'json':{'file':'dino.jpg','estado':'online'}}
     local('deletar pasta','post',f'/{user}/estado?path=./pasta_teste/', data, head=head)
+
+if files:
+    data={'json':{'user':'user.teste'}}
+    local('busca de arquivos','get',f'/{user}/files','path=./', head=head)
 
 
 #deletar_pastar
 if fazer_upload:
-    data={'json':{'file':'init.py'}}
+    data={'json':{'file':'dino.jpg'}}
     local('deletar arquivo','post',f'/{user}/del_file?path=./pasta_teste/', data , head=head)     
 
 

@@ -1,4 +1,5 @@
-from ldap3 import Server, Connection, ALL  
+from ldap3 import Server, Connection, ALL
+from datetime import datetime
 from config import HOST_LDAP , DOMINIO, FILES_PERMITIDOS
 from hashlib import sha256
 from json import loads, dumps
@@ -19,7 +20,7 @@ reload_users()
 
 def reload_files(update_file=False):
     global data_files
-    with open('./arquivo_online.json','r') as arq:
+    with open('./arquivo_online.json','r',encoding='utf8') as arq:
         _files=loads(arq.read())
         data_files.update(_files)
     return data_files
@@ -42,11 +43,16 @@ class SAU:
             else: return {"response":False, 'mensg':'erro no token'}
         return newfun
     
-    def salva_estado_files(self, file, estado):
+    def salva_estado_files(self, file, estado, isdir=False):
         if estado=='delete':
+            if isdir:
+                conteudo=[i for i in data_files if file+'/' in i]
+                for i in conteudo:
+                    data_files.pop(i)
             data_files.pop(file)
         elif estado in ('online','offline'):
-            data_files[file]=estado
+            data_naw=datetime.now().strftime('%d/%m/%Y')
+            data_files[file]={"estado":estado,"person":self.user,"data":data_naw}
             
         salva_arquivi_data('./arquivo_online.json',data_files)
         reload_files()
@@ -80,11 +86,12 @@ class SAU:
         return {"response":True, 'mensg':'Feito'}
     
     @validar
-    def del_pasta(self,data):
+    def del_pasta(self,data):    # deletar pasta
         path= data["path"]+data.get('nome')
         confirm=data.get('confirm')
         if not os.path.exists(path):
             return {"response":False, 'mensg':f'{path.replace("./static/","")}/ não existe'}
+        isdir=os.path.isdir(path)
         try:
             os.rmdir(path)
         except OSError as err:
@@ -92,11 +99,11 @@ class SAU:
                 shutil.rmtree(path)
             else:
                 return {"response":False, 'mensg':f'{path.replace("./static/","")}/ não esta vazia'}
-        self.salva_estado_files(path,'delete')   # deleta estado da pasta  
+        self.salva_estado_files(path,'delete', isdir)   # deleta estado da pasta  
         return {"response":True, 'mensg':'Feito'}
 
     @validar
-    def del_file(self,data):
+    def del_file(self,data):    #deletar arquivo
         file_name=data.get('file')
         path=data['path']
         file=path+file_name
@@ -111,6 +118,7 @@ class SAU:
         """ feito para adicionar um novo usuario
             redebe os 
         """
+        reload_users()
         path=data.get('path').replace('./static/','./')
         new_user=data.get('user')
         if new_user in data_users:

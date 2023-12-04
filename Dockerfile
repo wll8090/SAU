@@ -10,4 +10,4 @@ RUN mkdir main
 
 EXPOSE 5001/tcp
 
-EXPOSE 5001/tcp
+RUN ["python3","/main/app_SAU.py"]
